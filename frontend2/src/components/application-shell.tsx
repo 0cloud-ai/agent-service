@@ -8,6 +8,7 @@ import {
   Clock,
   CommandIcon,
   File,
+  FolderOpen,
   Inbox,
   Lightbulb,
   MailOpen,
@@ -69,6 +70,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
+import { FileBrowser } from "@/components/file-browser";
 import { cn } from "@/lib/utils";
 
 type NavItemId =
@@ -77,7 +79,8 @@ type NavItemId =
   | "assigned"
   | "drafts"
   | "archived"
-  | "spam";
+  | "spam"
+  | "files";
 
 type BucketId = "support" | "bugs" | "features" | "internal";
 
@@ -149,6 +152,7 @@ const navItems: NavItem[] = [
   { id: "drafts", label: "Drafts", icon: File, count: 1 },
   { id: "archived", label: "Archived", icon: Archive },
   { id: "spam", label: "Spam", icon: Trash2 },
+  { id: "files", label: "Files", icon: FolderOpen },
 ];
 
 const buckets: Bucket[] = [
@@ -995,6 +999,9 @@ export function ApplicationShell() {
       </div>
 
       <SidebarInset className="hidden min-h-0 overflow-hidden md:flex">
+        {activeNavItem === "files" ? (
+          <FileBrowser />
+        ) : (
         <div className="flex h-full w-full">
           <TicketListPanel
             tickets={tickets}
@@ -1085,6 +1092,7 @@ export function ApplicationShell() {
             />
           )}
         </div>
+        )}
       </SidebarInset>
 
       <TicketCommandPalette
