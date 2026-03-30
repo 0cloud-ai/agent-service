@@ -19,7 +19,7 @@ def test_create_provider(client):
     assert "id" in data
     assert data["vendor"] == "anthropic"
     assert data["model"] == "claude-sonnet-4-20250514"
-    assert data["api_base"] == "https://api.anthropic.com"
+    assert data["api_base_url"] == "https://api.anthropic.com"
     assert data["status"] == "unknown"
 
 

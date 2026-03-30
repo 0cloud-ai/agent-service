@@ -12,7 +12,7 @@ def _row_to_dict(row) -> dict:
         "id": row[0],
         "vendor": row[1],
         "model": row[2],
-        "api_base": row[3],
+        "api_base_url": row[3],
         "api_key": row[4],
         "status": row[5],
         "created_at": row[6],
@@ -22,7 +22,7 @@ def _row_to_dict(row) -> dict:
 def list_providers() -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, vendor, model, api_base, api_key, status, created_at FROM providers ORDER BY created_at DESC"
+        "SELECT id, vendor, model, api_base_url, api_key, status, created_at FROM providers ORDER BY created_at DESC"
     ).fetchall()
 
     providers = [_row_to_dict(r) for r in rows]
@@ -41,7 +41,7 @@ def list_providers() -> list[dict]:
 def get_provider(provider_id: str) -> dict | None:
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, vendor, model, api_base, api_key, status, created_at FROM providers WHERE id = ?",
+        "SELECT id, vendor, model, api_base_url, api_key, status, created_at FROM providers WHERE id = ?",
         [provider_id],
     ).fetchone()
     if row is None:
@@ -53,15 +53,15 @@ def create_provider(
     id: str,
     vendor: str,
     model: str,
-    api_base: str,
+    api_base_url: str,
     api_key: str | None,
     status: str = "unknown",
     created_at: str | None = None,
 ) -> dict:
     conn = get_conn()
     conn.execute(
-        "INSERT INTO providers (id, vendor, model, api_base, api_key, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [id, vendor, model, api_base, api_key, status, created_at],
+        "INSERT INTO providers (id, vendor, model, api_base_url, api_key, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [id, vendor, model, api_base_url, api_key, status, created_at],
     )
     return get_provider(id)  # type: ignore[return-value]
 
@@ -70,7 +70,7 @@ def update_provider(provider_id: str, **fields) -> dict | None:
     if not fields:
         return get_provider(provider_id)
 
-    allowed = {"vendor", "model", "api_base", "api_key", "status"}
+    allowed = {"vendor", "model", "api_base_url", "api_key", "status"}
     updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
     if not updates:
         return get_provider(provider_id)

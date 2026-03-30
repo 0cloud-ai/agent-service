@@ -5,6 +5,7 @@ Workspace Providers API — /api/v1/workspace/providers
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from model.do import Vendor
 from model.dto import ProviderDTO, PingResultDTO
 from service import provider_service
 
@@ -14,16 +15,16 @@ router = APIRouter(prefix="/api/v1/workspace", tags=["workspace-providers"])
 # ── Request bodies ───────────────────────────────────────────────────
 
 class CreateProviderRequest(BaseModel):
-    vendor: str
+    vendor: Vendor
     model: str
-    api_base: str | None = None
+    api_base_url: str | None = None
     api_key: str | None = None
 
 
 class UpdateProviderRequest(BaseModel):
-    vendor: str | None = None
+    vendor: Vendor | None = None
     model: str | None = None
-    api_base: str | None = None
+    api_base_url: str | None = None
     api_key: str | None = None
 
 
@@ -39,7 +40,7 @@ def create_provider(body: CreateProviderRequest) -> ProviderDTO:
     result = provider_service.create_provider(
         vendor=body.vendor,
         model=body.model,
-        api_base=body.api_base,
+        api_base_url=body.api_base_url,
         api_key=body.api_key,
     )
     return result
@@ -51,7 +52,7 @@ def update_provider(provider_id: str, body: UpdateProviderRequest) -> ProviderDT
         provider_id,
         vendor=body.vendor,
         model=body.model,
-        api_base=body.api_base,
+        api_base_url=body.api_base_url,
         api_key=body.api_key,
     )
     return result

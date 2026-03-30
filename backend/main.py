@@ -7,6 +7,7 @@ API 结构:
     /api/v1/service/       → 服务面板
 """
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -39,8 +40,9 @@ from repository.claude_cli_adapter import sync as sync_via_cli
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     get_conn()
-    sync_via_sdk()
-    sync_via_cli()
+    if not os.environ.get("SKIP_SYNC"):
+        sync_via_sdk()
+        sync_via_cli()
     yield
 
 
@@ -76,4 +78,4 @@ app.include_router(service_conversations_router)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=3000, reload=True)

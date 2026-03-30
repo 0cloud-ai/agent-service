@@ -8,6 +8,8 @@ import datetime as dt
 
 from pydantic import BaseModel, Field
 
+from model.do import Vendor
+
 
 # ── Pagination ───────────────────────────────────────────────────────
 
@@ -135,9 +137,9 @@ class MemberDTO(BaseModel):
 
 class ProviderDTO(BaseModel):
     id: str
-    vendor: str
+    vendor: Vendor
     model: str
-    api_base: str
+    api_base_url: str
     status: str
     used_by: list[str] = []
     created_at: dt.datetime
@@ -155,7 +157,7 @@ class PingResultDTO(BaseModel):
 
 class BindingDTO(BaseModel):
     provider_id: str
-    vendor: str
+    vendor: Vendor
     model: str
     role: str
 

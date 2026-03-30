@@ -6,6 +6,15 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass, field
+from enum import Enum
+
+
+class Vendor(str, Enum):
+    ANTHROPIC = "anthropic"
+    OPENAI = "openai"
+    DEEPSEEK = "deepseek"
+    GOOGLE = "google"
+    OLLAMA = "ollama"
 
 
 @dataclass
@@ -73,9 +82,9 @@ class Member:
 @dataclass
 class Provider:
     id: str
-    vendor: str
+    vendor: Vendor
     model: str
-    api_base: str
+    api_base_url: str
     api_key: str | None = None
     status: str = "unknown"
     created_at: dt.datetime = field(default_factory=dt.datetime.now)
