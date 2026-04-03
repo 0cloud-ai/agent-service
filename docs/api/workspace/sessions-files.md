@@ -1,6 +1,8 @@
 # Workspace — Sessions / Files API
 
 > 会话内的文件浏览和编辑（Files Tab）。操作范围限定在会话所属目录内，所有写操作会记录为系统事件，内联到对话流中。
+>
+> 所有接口通过 `?path=` query parameter 指定会话所在目录。
 
 ---
 
@@ -11,7 +13,7 @@
 > 列出会话所属目录下的文件和子目录。
 
 ```
-GET /api/v1/workspace/sessions/550e8400.../files/
+GET /api/v1/workspace/sessions/550e8400.../files/?path=/home/linyuanzhou/payment-gateway
 ```
 
 ```json
@@ -29,7 +31,7 @@ GET /api/v1/workspace/sessions/550e8400.../files/
 **浏览子目录：**
 
 ```
-GET /api/v1/workspace/sessions/550e8400.../files/src/
+GET /api/v1/workspace/sessions/550e8400.../files/src/?path=/home/linyuanzhou/payment-gateway
 ```
 
 ```json
@@ -49,12 +51,12 @@ GET /api/v1/workspace/sessions/550e8400.../files/src/
 
 ## 读取文件
 
-### GET /api/v1/workspace/sessions/{session_id}/files/{path}
+### GET /api/v1/workspace/sessions/{session_id}/files/{file_path}
 
 > 读取指定文件的内容。
 
 ```
-GET /api/v1/workspace/sessions/550e8400.../files/src/refund_processor.py
+GET /api/v1/workspace/sessions/550e8400.../files/src/refund_processor.py?path=/home/linyuanzhou/payment-gateway
 ```
 
 ```json
@@ -73,12 +75,12 @@ GET /api/v1/workspace/sessions/550e8400.../files/src/refund_processor.py
 
 ## 编辑文件
 
-### PUT /api/v1/workspace/sessions/{session_id}/files/{path}
+### PUT /api/v1/workspace/sessions/{session_id}/files/{file_path}
 
 > 用户通过 Files Tab 直接编辑文件。操作会在会话对话流中生成系统事件。
 
 ```
-PUT /api/v1/workspace/sessions/550e8400.../files/src/refund_processor.py
+PUT /api/v1/workspace/sessions/550e8400.../files/src/refund_processor.py?path=/home/linyuanzhou/payment-gateway
 ```
 
 ```json
@@ -110,12 +112,12 @@ PUT /api/v1/workspace/sessions/550e8400.../files/src/refund_processor.py
 
 ## 创建文件
 
-### POST /api/v1/workspace/sessions/{session_id}/files/{path}
+### POST /api/v1/workspace/sessions/{session_id}/files/{file_path}
 
 > 在会话所属目录下创建新文件。
 
 ```
-POST /api/v1/workspace/sessions/550e8400.../files/src/retry_utils.py
+POST /api/v1/workspace/sessions/550e8400.../files/src/retry_utils.py?path=/home/linyuanzhou/payment-gateway
 ```
 
 ```json
@@ -141,12 +143,12 @@ POST /api/v1/workspace/sessions/550e8400.../files/src/retry_utils.py
 
 ## 删除文件
 
-### DELETE /api/v1/workspace/sessions/{session_id}/files/{path}
+### DELETE /api/v1/workspace/sessions/{session_id}/files/{file_path}
 
 > 删除指定文件。
 
 ```
-DELETE /api/v1/workspace/sessions/550e8400.../files/src/old_handler.py
+DELETE /api/v1/workspace/sessions/550e8400.../files/src/old_handler.py?path=/home/linyuanzhou/payment-gateway
 ```
 
 **响应：**

@@ -1,17 +1,19 @@
 # Workspace — Sessions / Terminal API
 
 > 会话内的终端命令执行（Terminal Tab）。在会话所属目录下执行命令，所有操作会记录为系统事件，内联到对话流中。
+>
+> 所有接口通过 `?path=` query parameter 指定会话所在目录。
 
 ---
 
 ## 执行命令
 
-### POST /api/v1/workspace/sessions/{session_id}/terminal
+### POST /api/v1/workspace/sessions/{session_id}/terminal?path=...
 
 > 在会话所属目录下执行终端命令。输出通过 SSE 流式返回。
 
 ```
-POST /api/v1/workspace/sessions/550e8400.../terminal
+POST /api/v1/workspace/sessions/550e8400.../terminal?path=/home/linyuanzhou/payment-gateway
 ```
 
 ```json
