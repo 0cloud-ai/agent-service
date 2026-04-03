@@ -2,7 +2,32 @@
 
 > 会话的列表、详情、创建、对话和成员管理。工程面板右侧面板的数据源。
 >
+> 会话按目录层级存储在文件系统中（见 [目录上下文](../../context/README.md)），API 直接从 `{path}/.teamagent/sessions/` 读取。
+>
 > 相关子文档：[sessions-files.md](sessions-files.md)、[sessions-terminal.md](sessions-terminal.md)
+
+---
+
+## 概念
+
+会话（Session）存储在对应目录的 `.teamagent/sessions/` 下，每个会话一个子目录：
+
+```
+/home/linyuanzhou/payment-gateway/
+└── .teamagent/
+    └── sessions/
+        ├── 550e8400-e29b-41d4-a716-446655440000/
+        │   ├── session.json          # 会话元信息
+        │   └── messages.jsonl        # 对话记录（追加写入）
+        └── aab91f00-d82e-4f5a-b123-abcdef123456/
+            ├── session.json
+            └── messages.jsonl
+```
+
+- 每个目录拥有独立的会话列表，API 通过 `path` 参数定位到对应目录
+- 会话数据直接从文件系统读取，无需数据库
+- `session.json` 存储元信息（标题、harness、成员等）
+- `messages.jsonl` 按行追加记录对话消息和事件
 
 ---
 
@@ -10,7 +35,7 @@
 
 ### GET /api/v1/workspace/sessions/{path}
 
-> 列出指定目录下的会话，支持游标分页和排序。
+> 扫描 `{path}/.teamagent/sessions/` 目录，列出该层级的所有会话。
 
 ```
 GET /api/v1/workspace/sessions/home/linyuanzhou/payment-gateway?sort=updated_at&limit=20
@@ -43,6 +68,8 @@ GET /api/v1/workspace/sessions/home/linyuanzhou/payment-gateway?sort=updated_at&
 | limit | int (1-100) | 20 | 每页条数 |
 | sort | string | updated_at | `updated_at` 或 `created_at` |
 
+实现：读取 `{path}/.teamagent/sessions/*/session.json`，按 sort 字段排序后分页返回。
+
 **状态：** ✅ 已实现（需迁移路径前缀）
 
 ---
@@ -51,7 +78,7 @@ GET /api/v1/workspace/sessions/home/linyuanzhou/payment-gateway?sort=updated_at&
 
 ### POST /api/v1/workspace/sessions
 
-> 新建会话。
+> 在指定目录下新建会话，创建 `{path}/.teamagent/sessions/{id}/` 目录及初始文件。
 
 ```
 POST /api/v1/workspace/sessions
@@ -87,6 +114,12 @@ POST /api/v1/workspace/sessions
 | harness | string | 否 | 使用的 harness 引擎 ID，不传则使用 default harness。**session 创建后 harness 不可更改** |
 | members | string[] | 否 | 初始成员的 member_id 列表（来自 workspace members），不传则为空 |
 
+实现：
+1. 生成 UUID 作为会话 ID
+2. 创建 `{path}/.teamagent/sessions/{id}/` 目录
+3. 写入 `session.json`（元信息）
+4. 创建空的 `messages.jsonl`
+
 **状态：** 🆕 需新增
 
 ---
@@ -95,7 +128,7 @@ POST /api/v1/workspace/sessions
 
 ### GET /api/v1/workspace/sessions/{session_id}/messages
 
-> 获取会话的对话记录，包含用户消息、Agent 回复和系统事件。
+> 读取会话的 `messages.jsonl` 文件，返回对话记录。
 
 ```
 GET /api/v1/workspace/sessions/550e8400.../messages?limit=50
@@ -177,6 +210,8 @@ GET /api/v1/workspace/sessions/550e8400.../messages?limit=50
 | limit | int (1-100) | 50 | 每页条数 |
 | order | string | asc | `asc`（从头看）或 `desc`（从最新看）|
 
+实现：读取 `{path}/.teamagent/sessions/{session_id}/messages.jsonl`，逐行解析后分页返回。
+
 **消息类型：**
 
 | type | 说明 |
@@ -206,7 +241,7 @@ GET /api/v1/workspace/sessions/550e8400.../messages?limit=50
 
 ### POST /api/v1/workspace/sessions/{session_id}/messages
 
-> 在会话中发送消息，Agent 流式返回响应。
+> 在会话中发送消息，追加写入 `messages.jsonl`，Agent 流式返回响应。
 
 ```
 POST /api/v1/workspace/sessions/550e8400.../messages
@@ -270,6 +305,8 @@ event: done
 data: {"message_id": "msg-069", "session_updated_at": "2026-03-26T02:14:00Z"}
 ```
 
+流式响应的同时，每条消息和事件实时追加到 `messages.jsonl`。
+
 | 事件 | 说明 |
 |------|------|
 | `thinking` | Agent 的思考过程 |
@@ -285,7 +322,7 @@ data: {"message_id": "msg-069", "session_updated_at": "2026-03-26T02:14:00Z"}
 
 ## 会话成员
 
-Session 可以有自己的 members，是 workspace members 的子集。成员加入方式：
+Session 可以有自己的 members，是 workspace members 的子集。成员信息记录在 `session.json` 中。加入方式：
 
 - 创建会话时通过 `members` 字段指定
 - 发消息时 @ 提及，被 @ 的成员自动加入
@@ -293,7 +330,7 @@ Session 可以有自己的 members，是 workspace members 的子集。成员加
 
 ### GET /api/v1/workspace/sessions/{session_id}/members
 
-> 列出当前会话的成员。
+> 读取 `session.json` 中的成员列表。
 
 ```
 GET /api/v1/workspace/sessions/550e8400.../members
@@ -341,7 +378,7 @@ GET /api/v1/workspace/sessions/550e8400.../members
 
 ### POST /api/v1/workspace/sessions/{session_id}/members
 
-> 手动添加成员到会话。成员必须已是 workspace 的 member。
+> 手动添加成员到会话，更新 `session.json` 并在 `messages.jsonl` 中追加事件。
 
 ```
 POST /api/v1/workspace/sessions/550e8400.../members
@@ -375,7 +412,7 @@ POST /api/v1/workspace/sessions/550e8400.../members
 
 ### DELETE /api/v1/workspace/sessions/{session_id}/members/{member_id}
 
-> 从会话中移除成员。
+> 从会话中移除成员，更新 `session.json` 并在 `messages.jsonl` 中追加事件。
 
 ```
 DELETE /api/v1/workspace/sessions/550e8400.../members/mem-003
@@ -397,6 +434,43 @@ DELETE /api/v1/workspace/sessions/550e8400.../members/mem-003
 
 ---
 
+## 文件系统存储格式
+
+### session.json
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "title": "重构 PaymentProcessor 的回调逻辑",
+  "path": "/home/linyuanzhou/payment-gateway",
+  "harness": "claude-agent-sdk",
+  "members": [
+    {
+      "id": "mem-001",
+      "type": "user",
+      "name": "林远舟",
+      "joined_at": "2026-03-23T14:30:00Z",
+      "joined_via": "creator"
+    }
+  ],
+  "created_at": "2026-03-23T14:30:00Z",
+  "updated_at": "2026-03-23T17:45:00Z",
+  "message_count": 47
+}
+```
+
+### messages.jsonl
+
+每行一条 JSON，追加写入：
+
+```jsonl
+{"id":"msg-001","type":"message","role":"user","content":"帮我看一下 src/payment_processor.py...","created_at":"2026-03-23T14:30:00Z"}
+{"id":"msg-002","type":"message","role":"assistant","content":"我来读一下这个文件...","created_at":"2026-03-23T14:30:12Z"}
+{"id":"evt-001","type":"event","actor":"agent","action":"read_file","target":"src/payment_processor.py","created_at":"2026-03-23T14:30:13Z"}
+```
+
+---
+
 ## 响应模型
 
 ### Session
@@ -407,7 +481,7 @@ DELETE /api/v1/workspace/sessions/550e8400.../members/mem-003
 | title | string | 会话标题 |
 | path | string | 所属目录路径 |
 | harness | string | 使用的 harness 引擎 ID（创建后不可更改）|
-| members | string[] | 当前会话成员的 member_id 列表 |
+| members | Member[] | 当前会话成员列表 |
 | created_at | datetime | 创建时间 |
 | updated_at | datetime | 最后更新时间 |
 | message_count | int | 消息+事件总数 |
@@ -459,15 +533,18 @@ DELETE /api/v1/workspace/sessions/550e8400.../members/mem-003
 ```
 点击目录
   → GET /api/v1/workspace/sessions/{path}
+    （扫描 {path}/.teamagent/sessions/ 目录）
 
 点 "Load more"
   → GET /api/v1/workspace/sessions/{path}?cursor=xxx
 
 新建会话（可选指定 harness 和初始 members）
   → POST /api/v1/workspace/sessions
+    （创建 {path}/.teamagent/sessions/{id}/ 目录）
 
 点击会话 → 打开 Chat Tab
   → GET /api/v1/workspace/sessions/{id}/messages
+    （读取 messages.jsonl）
 
 查看/管理会话成员
   → GET /api/v1/workspace/sessions/{id}/members
@@ -476,7 +553,7 @@ DELETE /api/v1/workspace/sessions/550e8400.../members/mem-003
 
 在 Chat Tab 发消息（@ 提及的成员自动加入会话）
   → POST /api/v1/workspace/sessions/{id}/messages
-  → SSE 流式渲染 Agent 响应
+  → SSE 流式渲染 Agent 响应（同时追加到 messages.jsonl）
 
 Files Tab / Terminal Tab → 见 sessions-files.md / sessions-terminal.md
 ```
