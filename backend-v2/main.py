@@ -9,6 +9,9 @@ from api.user_api import router as user_router
 from api.workspace_providers_api import router as providers_router
 from api.workspace_harness_api import router as harness_router
 from api.workspace_members_api import router as members_router
+from api.workspace_sessions_api import router as sessions_router
+from api.workspace_files_api import router as files_router
+from api.workspace_terminal_api import router as terminal_router
 
 
 @asynccontextmanager
@@ -34,6 +37,9 @@ app.include_router(user_router)
 app.include_router(providers_router)
 app.include_router(harness_router)
 app.include_router(members_router)
+app.include_router(sessions_router)
+app.include_router(files_router)
+app.include_router(terminal_router)
 
 
 @app.get("/health")
