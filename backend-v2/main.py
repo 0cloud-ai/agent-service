@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 
 from config.loader import load_config
+from api.user_api import router as user_router
 
 
 @asynccontextmanager
@@ -12,6 +13,7 @@ async def lifespan(app: FastAPI):
     base_path = Path(os.environ.get("TEAMAGENT_BASE", ".")) / ".teamagent"
     app.state.base_path = base_path
     app.state.config = load_config(base_path / "teamagent.json")
+    app.state.jwt_secret = os.environ.get("JWT_SECRET", "changeme")
     yield
 
 
@@ -24,6 +26,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(user_router)
 
 
 @app.get("/health")

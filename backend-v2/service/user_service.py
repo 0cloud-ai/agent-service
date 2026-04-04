@@ -61,6 +61,7 @@ class UserService:
                 "id": user["id"],
                 "email": user["email"],
                 "name": user["name"],
+                "created_at": user.get("created_at", ""),
             },
         }
 
