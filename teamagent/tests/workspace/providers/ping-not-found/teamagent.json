@@ -1,0 +1,14 @@
+{
+  "providers": {
+    "claude": {
+      "baseUrl": "https://api.anthropic.com",
+      "apiKey": "sk-test",
+      "apiFormat": "anthropic",
+      "models": [
+        {"id": "claude-sonnet-4", "name": "Claude Sonnet 4"}
+      ]
+    }
+  },
+  "harnesses": {"engines": {}},
+  "members": []
+}

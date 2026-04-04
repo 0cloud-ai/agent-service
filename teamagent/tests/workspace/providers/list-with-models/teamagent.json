@@ -1,0 +1,23 @@
+{
+  "providers": {
+    "claude": {
+      "baseUrl": "https://api.anthropic.com",
+      "apiKey": "sk-test",
+      "apiFormat": "anthropic",
+      "models": [
+        {"id": "claude-sonnet-4", "name": "Claude Sonnet 4"},
+        {"id": "claude-opus-4", "name": "Claude Opus 4"}
+      ]
+    },
+    "openai": {
+      "baseUrl": "https://api.openai.com",
+      "apiKey": "sk-test",
+      "apiFormat": "openai-completions",
+      "models": [
+        {"id": "gpt-4o", "name": "GPT-4o"}
+      ]
+    }
+  },
+  "harnesses": {"engines": {}},
+  "members": []
+}

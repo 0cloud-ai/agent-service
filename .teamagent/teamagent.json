@@ -1,0 +1,42 @@
+{
+  "providers": {
+    "claude": {
+      "baseUrl": "https://api.anthropic.com",
+      "apiKey": "sk-test-placeholder",
+      "apiFormat": "anthropic",
+      "models": [
+        {"id": "claude-sonnet-4", "name": "Claude Sonnet 4"},
+        {"id": "claude-opus-4", "name": "Claude Opus 4"}
+      ]
+    },
+    "openai": {
+      "baseUrl": "https://api.openai.com",
+      "apiKey": "sk-test-placeholder",
+      "apiFormat": "openai-completions",
+      "models": [
+        {"id": "gpt-4o", "name": "GPT-4o"}
+      ]
+    }
+  },
+  "harnesses": {
+    "default": "opencode",
+    "engines": {
+      "claude-agent-sdk": {
+        "engine": "claude-agent-sdk",
+        "name": "Claude Agent SDK",
+        "description": "Anthropic 官方 Agent SDK",
+        "apiFormats": ["anthropic"]
+      },
+      "opencode": {
+        "engine": "opencode",
+        "name": "OpenCode",
+        "description": "开源 code agent 引擎",
+        "apiFormats": ["openai-completions", "anthropic"]
+      }
+    }
+  },
+  "members": [
+    {"id": "mem-001", "type": "user", "name": "admin", "email": "admin@test.com", "role": "owner"},
+    {"id": "mem-002", "type": "user", "name": "dev", "email": "dev@test.com", "role": "member"}
+  ]
+}
