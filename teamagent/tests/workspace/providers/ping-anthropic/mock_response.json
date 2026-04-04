@@ -1,0 +1,20 @@
+{
+  "id": "06200063ecf9636721907a7ae61504dc",
+  "type": "message",
+  "role": "assistant",
+  "model": "MiniMax-M2.7-highspeed",
+  "content": [
+    {
+      "thinking": "The user just says \"hello\". We need to respond in a friendly, polite manner.",
+      "signature": "5552983d678a797577c46b28c8acee08697fcd348a0ed6e2bff238c587f91706",
+      "type": "thinking"
+    },
+    {
+      "text": "Hello! How can I help you today?",
+      "type": "text"
+    }
+  ],
+  "usage": {"input_tokens": 42, "output_tokens": 95},
+  "stop_reason": "end_turn",
+  "base_resp": {"status_code": 0, "status_msg": ""}
+}

@@ -1,0 +1,14 @@
+{
+  "providers": {
+    "minmax": {
+      "baseUrl": "https://api.minimaxi.com/anthropic",
+      "apiKey": "sk-test-key",
+      "apiFormat": "anthropic",
+      "models": [
+        {"id": "kimi-k2", "name": "Kimi K2"}
+      ]
+    }
+  },
+  "harnesses": {"engines": {}},
+  "members": []
+}
