@@ -1,0 +1,14 @@
+{
+  "providers": {
+    "minmax": {
+      "baseUrl": "${MINMAX_BASE_URL}",
+      "apiKey": "${MINMAX_API_KEY}",
+      "apiFormat": "anthropic",
+      "models": [
+        {"id": "MiniMax-M2.7-highspeed", "name": "MiniMax-M2.7-highspeed"}
+      ]
+    }
+  },
+  "harnesses": {"default": null, "engines": {}},
+  "members": []
+}
