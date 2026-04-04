@@ -6,6 +6,9 @@ import os
 
 from config.loader import load_config
 from api.user_api import router as user_router
+from api.workspace_providers_api import router as providers_router
+from api.workspace_harness_api import router as harness_router
+from api.workspace_members_api import router as members_router
 
 
 @asynccontextmanager
@@ -28,6 +31,9 @@ app.add_middleware(
 )
 
 app.include_router(user_router)
+app.include_router(providers_router)
+app.include_router(harness_router)
+app.include_router(members_router)
 
 
 @app.get("/health")
