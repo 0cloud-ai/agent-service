@@ -17,7 +17,7 @@ Harness 是 agent-service 的执行引擎。它接收用户消息，在后台启
   -> HarnessService 持有 watcher，用 watchdog 监听 watcher.file_path
   -> 文件变更 -> 系统构造 FileChangeEvent -> 调 engine.watch(event)
   -> engine 返回 list[MessageRecord | EventRecord] -> 系统写入 messages.jsonl
-  -> engine.is_done(event) 返回 True -> 停止监听
+  -> 某条 MessageRecord.done == True -> 停止监听
 ```
 
 ---
@@ -82,6 +82,7 @@ class MessageRecord:
     type: str = "message"      # 固定
     role: str = ""             # "assistant"
     content: str = ""
+    done: bool = False         # True 表示本轮执行结束，系统停止监听
 
 
 @dataclass
@@ -125,12 +126,7 @@ class HarnessEngine:
 
         将引擎特有的 jsonl 格式转换为统一结构体。
         返回结构体列表，None 表示跳过本次变更。
-        """
-        raise NotImplementedError
-
-    def is_done(self, event: FileChangeEvent) -> bool:
-        """判断引擎任务是否执行完成。
-        返回 True 后系统停止监听。
+        当返回的 MessageRecord 中 done=True 时，系统停止监听。
         """
         raise NotImplementedError
 ```
@@ -146,6 +142,9 @@ class HarnessEngine:
 ```python
 # 返回一条 assistant 消息
 MessageRecord(role="assistant", content="Hello! How can I help you today?")
+
+# 返回一条 assistant 消息，标记本轮结束
+MessageRecord(role="assistant", content="Done.", done=True)
 
 # 返回一个文件读取事件
 EventRecord(actor="agent", action="read_file", target="src/main.py")
@@ -217,7 +216,8 @@ class ClaudeCLIEngine(HarnessEngine):
             msg_type = line.get("type")
             if msg_type == "assistant":
                 content = line.get("message", {}).get("content", "")
-                results.append(MessageRecord(role="assistant", content=content))
+                is_done = line.get("stop_reason") == "end_turn"
+                results.append(MessageRecord(role="assistant", content=content, done=is_done))
             elif msg_type == "tool_use":
                 results.append(EventRecord(
                     actor="agent",
@@ -225,12 +225,6 @@ class ClaudeCLIEngine(HarnessEngine):
                     target=line.get("input", {}).get("path", ""),
                 ))
         return results or None
-
-    def is_done(self, event):
-        for line in event.new_lines:
-            if line.get("stop_reason") == "end_turn":
-                return True
-        return False
 ```
 
 ## 插件示例：claude-agent-sdk
@@ -276,7 +270,8 @@ class ClaudeSDKEngine(HarnessEngine):
             msg_type = line.get("type")
             if msg_type == "assistant":
                 content = line.get("message", {}).get("content", "")
-                results.append(MessageRecord(role="assistant", content=content))
+                is_done = line.get("stop_reason") == "end_turn"
+                results.append(MessageRecord(role="assistant", content=content, done=is_done))
             elif msg_type == "tool_use":
                 results.append(EventRecord(
                     actor="agent",
@@ -284,12 +279,6 @@ class ClaudeSDKEngine(HarnessEngine):
                     target=line.get("input", {}).get("path", ""),
                 ))
         return results or None
-
-    def is_done(self, event):
-        for line in event.new_lines:
-            if line.get("stop_reason") == "end_turn":
-                return True
-        return False
 ```
 
 ---
@@ -314,7 +303,7 @@ class ClaudeSDKEngine(HarnessEngine):
    a. 系统计算增量行，构造 FileChangeEvent
    b. 调 engine.watch(event) -> 拿到 list[MessageRecord | EventRecord]
    c. 系统补充 id 和 created_at，写入 messages.jsonl
-   d. 调 engine.is_done(event) -> True 则停止监听
+   d. 如果某条 MessageRecord.done == True -> 停止监听
 ```
 
 ---
@@ -324,7 +313,7 @@ class ClaudeSDKEngine(HarnessEngine):
 1. **引擎不常���内存** -- 每次用户发消息时实例化，submit 后系统持有 SessionWatcher 和 engine 引用
 2. **submit 必须立即返回** -- 后台任务异步执行，不阻塞 API 响应
 3. **SessionWatcher 是纯数据对象** -- 只有 file_path 和 session_id，不含业务逻辑
-4. **watch() 和 is_done() 在 Engine 上** -- 系统调 engine 做格式转换和完成判断
+4. **watch() 在 Engine 上** -- 系统调 engine.watch() 做格式转换，通过 MessageRecord.done 判断完成
 5. **watch() 返回 MessageRecord / EventRecord** -- 不是裸 dict，使用系统预置的结构体
 6. **插件不写 messages.jsonl** -- 只返回结构体，系统决定写到哪里（session 或 conversation）
 7. **插件不读配置文件** -- provider 信息由系统注入
