@@ -31,8 +31,9 @@ async def ping_provider(
     if provider is None:
         raise HTTPException(status_code=404, detail="Provider not found")
     model_id = (body or {}).get("model")
+    if not model_id and provider.models:
+        model_id = provider.models[0].id
     result = await _provider_svc.ping(provider.baseUrl, provider.apiKey, provider.apiFormat, model_id)
     result["provider"] = provider_name
-    if model_id:
-        result["model"] = model_id
+    result["model"] = model_id
     return result

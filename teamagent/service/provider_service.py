@@ -14,7 +14,7 @@ class ProviderService:
                     resp = await client.post(
                         f"{base_url}/v1/chat/completions",
                         headers=headers,
-                        json={"model": model_id or "test", "messages": [{"role": "user", "content": "ping"}], "max_tokens": 1},
+                        json={"model": model_id or "test", "messages": [{"role": "user", "content": "hello"}], "max_tokens": 100},
                     )
                 elif api_format == "anthropic":
                     headers = {}
@@ -24,19 +24,32 @@ class ProviderService:
                     resp = await client.post(
                         f"{base_url}/v1/messages",
                         headers=headers,
-                        json={"model": model_id or "test", "messages": [{"role": "user", "content": "ping"}], "max_tokens": 1},
+                        json={"model": model_id or "test", "messages": [{"role": "user", "content": "hello"}], "max_tokens": 100},
                     )
                 elif api_format == "ollama":
                     resp = await client.post(
                         f"{base_url}/api/generate",
-                        json={"model": model_id or "test", "prompt": "ping", "stream": False},
+                        json={"model": model_id or "test", "prompt": "hello", "stream": False},
                     )
                 else:
                     return {"status": "unhealthy", "error": f"Unknown apiFormat: {api_format}"}
             latency = int((time.monotonic() - start) * 1000)
             if resp.status_code < 400:
-                return {"status": "healthy", "latency_ms": latency, "model": model_id, "message": "连通正常"}
+                response_text = self._extract_response(api_format, resp.json())
+                return {"status": "healthy", "latency_ms": latency, "model": model_id, "response": response_text, "message": "连通正常"}
             else:
                 return {"status": "unhealthy", "error": f"{resp.status_code}: {resp.text[:200]}", "message": "连接失败"}
         except Exception as e:
             return {"status": "unhealthy", "error": str(e), "message": "连接失败"}
+
+    def _extract_response(self, api_format: str, data: dict) -> str:
+        try:
+            if api_format == "anthropic":
+                return data.get("content", [{}])[0].get("text", "")
+            elif api_format == "openai-completions":
+                return data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            elif api_format == "ollama":
+                return data.get("response", "")
+        except (IndexError, KeyError):
+            pass
+        return str(data)[:200]
