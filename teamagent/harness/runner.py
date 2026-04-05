@@ -41,6 +41,9 @@ class HarnessRunner:
                     continue
                 if self._write_records(records):
                     return
+        except (RuntimeError, GeneratorExit):
+            # SDK 内部 anyio cancel scope 在迭代器关闭时可能报错，安全忽略
+            pass
         except Exception:
             logger.exception("AsyncWatcher error for session %s", watcher.session_id)
 

@@ -6,8 +6,9 @@ from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
     ResultMessage,
-    StreamEvent,
+    SystemMessage,
     TextBlock,
+    ThinkingBlock,
     ToolUseBlock,
     query,
 )
@@ -21,27 +22,37 @@ class ClaudeSDKEngine(HarnessEngine):
     name = "Claude Agent SDK"
     api_formats = ["anthropic"]
 
-    def submit(self, path: str, message: str, provider: ProviderInfo) -> AsyncWatcher:
+    def submit(self, path: str, message: str, provider: ProviderInfo | None = None) -> AsyncWatcher:
         sid = str(uuid.uuid4())
+
+        opts: dict = {"cwd": path}
+        if provider:
+            opts["model"] = provider.model_id
+            opts["env"] = {
+                "ANTHROPIC_BASE_URL": provider.base_url,
+                "ANTHROPIC_API_KEY": provider.api_key or "",
+            }
 
         async def _stream():
             async for event in query(
                 prompt=message,
-                options=ClaudeAgentOptions(
-                    cwd=path,
-                    model=provider.model_id,
-                ),
+                options=ClaudeAgentOptions(**opts),
             ):
                 yield event
 
         return AsyncWatcher(session_id=sid, iterator=_stream())
 
     def watch(self, event) -> list[Record] | None:
-        """event 是 SDK yield 的原始对象（AssistantMessage / ResultMessage / StreamEvent 等）。"""
+        """event 是 SDK yield 的原始对象。"""
+        if isinstance(event, SystemMessage):
+            return None
+
         if isinstance(event, AssistantMessage):
             text_parts = []
             tool_records = []
             for block in event.content:
+                if isinstance(block, ThinkingBlock):
+                    continue
                 if isinstance(block, TextBlock):
                     text_parts.append(block.text)
                 elif isinstance(block, ToolUseBlock):

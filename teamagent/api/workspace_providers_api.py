@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from teamagent.api.deps import get_config
 from teamagent.config.models import AppConfig
+from teamagent.model.provider import PingProviderRequest
 from teamagent.service.provider_service import ProviderService
 
 router = APIRouter(prefix="/api/v1/workspace/providers", tags=["workspace-providers"])
@@ -24,13 +25,13 @@ def list_providers(config: AppConfig = Depends(get_config)):
 @router.post("/{provider_name}/ping")
 async def ping_provider(
     provider_name: str,
-    body: dict | None = None,
+    req: PingProviderRequest | None = None,
     config: AppConfig = Depends(get_config),
 ):
     provider = config.providers.get(provider_name)
     if provider is None:
         raise HTTPException(status_code=404, detail="Provider not found")
-    model_id = (body or {}).get("model")
+    model_id = req.model if req else None
     if not model_id and provider.models:
         model_id = provider.models[0].id
     result = await _provider_svc.ping(provider.baseUrl, provider.apiKey, provider.apiFormat, model_id)

@@ -16,7 +16,7 @@ class HarnessEngine:
     api_formats: list[str]
 
     def submit(
-        self, path: str, message: str, provider: ProviderInfo
+        self, path: str, message: str, provider: ProviderInfo | None = None
     ) -> FileWatcher | AsyncWatcher:
         raise NotImplementedError
 
