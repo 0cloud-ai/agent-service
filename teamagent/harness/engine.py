@@ -15,12 +15,12 @@ class HarnessEngine:
     name: str
     api_formats: list[str]
 
-    def submit(
+    async def submit(
         self, path: str, message: str, provider: ProviderInfo | None = None
     ) -> FileWatcher | AsyncWatcher:
         raise NotImplementedError
 
-    def watch(self, event) -> list[Record] | None:
+    async def watch(self, event) -> list[Record] | None:
         """统一的格式转换方法，两种 Watcher 模式都会调用。
 
         FileWatcher 模式：event 是 FileChangeEvent（文件增量数据）

@@ -22,10 +22,13 @@ class ClaudeSDKEngine(HarnessEngine):
     name = "Claude Agent SDK"
     api_formats = ["anthropic"]
 
-    def submit(self, path: str, message: str, provider: ProviderInfo | None = None) -> AsyncWatcher:
+    async def submit(self, path: str, message: str, provider: ProviderInfo | None = None) -> AsyncWatcher:
         sid = str(uuid.uuid4())
 
-        opts: dict = {"cwd": path}
+        opts: dict = {
+            "cwd": path,
+            "permission_mode": "bypassPermissions",
+        }
         if provider:
             opts["model"] = provider.model_id
             opts["env"] = {
@@ -42,7 +45,7 @@ class ClaudeSDKEngine(HarnessEngine):
 
         return AsyncWatcher(session_id=sid, iterator=_stream())
 
-    def watch(self, event) -> list[Record] | None:
+    async def watch(self, event) -> list[Record] | None:
         """event 是 SDK yield 的原始对象。"""
         if isinstance(event, SystemMessage):
             return None

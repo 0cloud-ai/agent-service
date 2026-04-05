@@ -29,7 +29,7 @@ def list_sessions(
 @router.post("")
 def create_session(req: CreateSessionRequest, svc: SessionService = Depends(_get_session_service)):
     try:
-        return svc.create_session(req.path, req.title, req.harness, req.members)
+        return svc.create_session(req.path, req.title, req.harness, req.provider, req.members)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -50,14 +50,14 @@ def get_messages(
 
 
 @router.post("/{session_id}/messages")
-def send_message(
+async def send_message(
     session_id: str,
     req: SendMessageRequest,
     path: str,
     svc: SessionService = Depends(_get_session_service),
 ):
     try:
-        return svc.send_message(path, session_id, req.content, req.mentions)
+        return await svc.send_message(path, session_id, req.content, req.mentions)
     except ValueError:
         raise HTTPException(status_code=404, detail="Session not found")
 

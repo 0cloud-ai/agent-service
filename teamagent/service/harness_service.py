@@ -42,7 +42,7 @@ class HarnessService:
         try:
             start = time.monotonic()
             with tempfile.TemporaryDirectory() as tmpdir:
-                watcher = engine.submit(tmpdir, "hello", provider_info)
+                watcher = await engine.submit(tmpdir, "hello", provider_info)
                 records = await asyncio.wait_for(
                     self._consume_watcher(engine, watcher),
                     timeout=PING_TIMEOUT,
@@ -98,21 +98,19 @@ class HarnessService:
         if isinstance(watcher, AsyncWatcher):
             try:
                 async for raw_event in watcher.iterator:
-                    records = engine.watch(raw_event)
+                    records = await engine.watch(raw_event)
                     if records is None:
                         continue
                     all_records.extend(records)
                     if any(r.done for r in records):
                         break
             except (RuntimeError, GeneratorExit):
-                # SDK 内部 anyio cancel scope 在 break 关闭迭代器时可能报错，安全忽略
                 pass
         elif isinstance(watcher, FileWatcher):
-            # FileWatcher ping: 轮询文件直到 done
             import json
             file_path = Path(watcher.file_path)
             lines_read = 0
-            for _ in range(PING_TIMEOUT * 10):  # 100ms 间隔
+            for _ in range(PING_TIMEOUT * 10):
                 if not file_path.exists():
                     await asyncio.sleep(0.1)
                     continue
@@ -142,16 +140,17 @@ class HarnessService:
                         new_lines=new_lines,
                         total_lines=lines_read,
                     )
-                    records = engine.watch(event)
+                    records = await engine.watch(event)
                     if records:
                         all_records.extend(records)
                         if any(r.done for r in records):
                             break
         return all_records
 
-    def run_harness(
+    async def run_harness(
         self,
         harness_id: str,
+        provider_name: str | None,
         path: str,
         session_id: str,
         message: str,
@@ -164,14 +163,13 @@ class HarnessService:
             logger.warning("Harness engine '%s' not found in registry", harness_id)
             return
 
-        provider_info = self._resolve_provider(engine, config)
-        if provider_info is None:
-            logger.warning("No compatible provider found for harness '%s'", harness_id)
-            return
+        provider_info = None
+        if provider_name:
+            provider_info = self._resolve_provider_by_name(provider_name, engine, config)
 
-        watcher = engine.submit(path, message, provider_info)
+        watcher = await engine.submit(path, message, provider_info)
         runner = HarnessRunner(messages_path)
-        asyncio.get_event_loop().create_task(runner.run(engine, watcher))
+        asyncio.create_task(runner.run(engine, watcher))
         logger.info(
             "Harness started: engine=%s, session=%s, watcher_session=%s",
             harness_id, session_id, watcher.session_id,
@@ -195,19 +193,3 @@ class HarnessService:
             api_format=provider.apiFormat,
             model_id=provider.models[0].id,
         )
-
-    @staticmethod
-    def _resolve_provider(engine, config: AppConfig) -> ProviderInfo | None:
-        """从 config.providers 中找第一个与 engine.api_formats 兼容的 provider。"""
-        for name, provider in config.providers.items():
-            if provider.apiFormat in engine.api_formats:
-                if not provider.models:
-                    continue
-                return ProviderInfo(
-                    name=name,
-                    base_url=provider.baseUrl,
-                    api_key=provider.apiKey,
-                    api_format=provider.apiFormat,
-                    model_id=provider.models[0].id,
-                )
-        return None

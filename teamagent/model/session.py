@@ -5,6 +5,7 @@ class CreateSessionRequest(BaseModel):
     path: str
     title: str | None = None
     harness: str | None = None
+    provider: str | None = None
     members: list[str] = []
 
 

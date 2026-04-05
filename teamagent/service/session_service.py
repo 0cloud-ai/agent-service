@@ -14,7 +14,7 @@ class SessionService:
         self._config = config
         self._harness_service = HarnessService()
 
-    def create_session(self, path: str, title: str | None, harness: str | None, members: list[str]) -> dict:
+    def create_session(self, path: str, title: str | None, harness: str | None, provider: str | None, members: list[str]) -> dict:
         harness_id = harness or ""
         if harness_id and get_engine(harness_id) is None:
             raise ValueError(f"Harness '{harness_id}' not found")
@@ -24,7 +24,8 @@ class SessionService:
             "id": session_id,
             "title": title,
             "path": path,
-            "harness": harness_id or "",
+            "harness": harness_id,
+            "provider": provider or "",
             "members": [],
             "created_at": now,
             "updated_at": now,
@@ -57,7 +58,7 @@ class SessionService:
             "pagination": {"next_cursor": next_cursor, "has_more": has_more, "total": total},
         }
 
-    def send_message(self, path: str, session_id: str, content: str, mentions: list[str] | None = None) -> dict:
+    async def send_message(self, path: str, session_id: str, content: str, mentions: list[str] | None = None) -> dict:
         session = self._repo.get_session(Path(path), session_id)
         if session is None:
             raise ValueError("Session not found")
@@ -95,9 +96,11 @@ class SessionService:
         # 触发 harness 引擎（后台执行）
         harness_id = session.get("harness")
         if harness_id:
+            provider_name = session.get("provider") or None
             messages_path = self._repo._session_dir(Path(path), session_id) / "messages.jsonl"
-            self._harness_service.run_harness(
+            await self._harness_service.run_harness(
                 harness_id=harness_id,
+                provider_name=provider_name,
                 path=path,
                 session_id=session_id,
                 message=content,

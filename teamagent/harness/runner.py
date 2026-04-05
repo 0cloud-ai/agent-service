@@ -36,7 +36,7 @@ class HarnessRunner:
     async def _run_async(self, engine: HarnessEngine, watcher: AsyncWatcher) -> None:
         try:
             async for raw_event in watcher.iterator:
-                records = engine.watch(raw_event)
+                records = await engine.watch(raw_event)
                 if records is None:
                     continue
                 if self._write_records(records):
@@ -79,7 +79,7 @@ class HarnessRunner:
                 new_lines=new_lines,
                 total_lines=total,
             )
-            records = engine.watch(event)
+            records = await engine.watch(event)
             if records is None:
                 continue
             if self._write_records(records):
