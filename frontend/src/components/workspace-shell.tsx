@@ -11,7 +11,7 @@ import {
   ExternalLink,
   LogOut,
 } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -57,7 +57,7 @@ const serviceItems: NavItem[] = [
 
 export function WorkspaceShell() {
   const [activeView, setActiveView] = useState<WorkspaceView>("sessions");
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthStore();
   const router = useRouter();
 
   return (

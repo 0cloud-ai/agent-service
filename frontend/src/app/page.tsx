@@ -2,12 +2,15 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth";
-import { WorkspaceShell } from "@/components/workspace-shell";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function Home() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, validateToken } = useAuthStore();
   const router = useRouter();
+
+  useEffect(() => {
+    validateToken();
+  }, [validateToken]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -15,7 +18,7 @@ export default function Home() {
     }
   }, [isLoading, user, router]);
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p className="text-sm text-muted-foreground">Loading...</p>
@@ -23,9 +26,5 @@ export default function Home() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
-  return <WorkspaceShell />;
+  return <div>Workspace placeholder</div>;
 }

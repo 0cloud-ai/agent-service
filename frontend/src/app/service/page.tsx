@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/lib/auth";
+import { useAuthStore } from "@/stores/auth-store";
 import { conversationsApi, serviceInfoApi } from "@/lib/api";
 import type {
   Conversation,
@@ -48,7 +48,7 @@ function statusBadgeVariant(
 // ── Page ─────────────────────────────────────────────────────────────
 
 export default function ServicePage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuthStore();
   const router = useRouter();
 
   // Service info
