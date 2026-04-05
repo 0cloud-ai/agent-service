@@ -21,16 +21,28 @@ export const useAuthStore = create<AuthState>((set) => ({
     const res = await userApi.login(email, password);
     localStorage.setItem("token", res.token);
     set({ token: res.token });
-    const me = await userApi.getMe();
-    set({ user: me });
+    try {
+      const me = await userApi.getMe();
+      set({ user: me, isLoading: false });
+    } catch {
+      localStorage.removeItem("token");
+      set({ token: null, isLoading: false });
+      throw new Error("Login succeeded but failed to fetch user profile");
+    }
   },
 
   register: async (email, name, password) => {
     const res = await userApi.register(email, name, password);
     localStorage.setItem("token", res.token);
     set({ token: res.token });
-    const me = await userApi.getMe();
-    set({ user: me });
+    try {
+      const me = await userApi.getMe();
+      set({ user: me, isLoading: false });
+    } catch {
+      localStorage.removeItem("token");
+      set({ token: null, isLoading: false });
+      throw new Error("Registration succeeded but failed to fetch user profile");
+    }
   },
 
   logout: () => {

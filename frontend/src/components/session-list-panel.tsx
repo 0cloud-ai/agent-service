@@ -14,9 +14,10 @@ export function SessionListPanel() {
     useWorkspaceStore();
   const { selectedSession, selectSession } = useSessionStore();
 
+  // Initial load only — path changes are handled by setPath in workspace-store
   useEffect(() => {
     fetchSessions();
-  }, [fetchSessions, currentPath]);
+  }, [fetchSessions]);
 
   return (
     <div className="flex h-full w-1/4 max-w-[320px] min-w-[240px] shrink-0 flex-col overflow-hidden border-r bg-background">
